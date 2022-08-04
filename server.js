@@ -1,6 +1,9 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+//allows access to animal data
+const { animals } = require('./data/animals.json');
+
 //will use the port the application suggests
 const PORT = process.env.PORT || 3001;
 //tells server to listen for requests
@@ -11,16 +14,13 @@ app.use(express.urlencoded({ extended: true }));
 // parse incoming JSON data
 app.use(express.json());
 
-//allows access to animal data
-const { animals } = require('./data/animals.json');
-//add the route
 
 //This function will take in req.query as an argument and filter through the animals accordingly, returning the new filtered array
 function filterByQuery(query, animalsArray) {
     let personalityTraitsArray = [];
-  // Note that we save the animalsArray as filteredResults here:
-  let filteredResults = animalsArray;
-  if (query.personalityTraits) {
+    // Note that we save the animalsArray as filteredResults here:
+    let filteredResults = animalsArray;
+    if (query.personalityTraits) {
     // Save personalityTraits as a dedicated array.
     // If personalityTraits is a string, place it into a new array and save.
     if (typeof query.personalityTraits === 'string') {
@@ -28,8 +28,8 @@ function filterByQuery(query, animalsArray) {
     } else {
       personalityTraitsArray = query.personalityTraits;
     }
-    // Loop through each trait in the personalityTraits array:
-    personalityTraitsArray.forEach(trait => {
+      // Loop through each trait in the personalityTraits array:
+      personalityTraitsArray.forEach(trait => {
       // Check the trait against each animal in the filteredResults array.
       // Remember, it is initially a copy of the animalsArray,
       // but here we're updating it for each trait in the .forEach() loop.
@@ -72,6 +72,30 @@ function createNewAnimal(body, animalsArray) {
     return animal;
 }
 
+function validateAnimal(animal) {
+  if (!animal.name || typeof animal.name !== 'string') {
+    return false;
+  }
+  if (!animal.species || typeof animal.species !== 'string') {
+    return false;
+  }
+  if (!animal.diet || typeof animal.diet !== 'string') {
+    return false;
+  }
+  if (!animal.personalityTraits || !Array.isArray(animal.personalityTraits)) {
+    return false;
+  }
+  return true;
+}
+
+app.get('/api/animals', (req, res) => {
+  let results = animals;
+  if (req.query) {
+      results = filterByQuery(req.query, results);
+      }
+  res.json(results);
+});
+
 //used when we only want one specific animal, rather than an array of all the animals that match a query.
 app.get('/api/animals/:id', (req, res) => {
     const result = findById(req.params.id, animals);
@@ -82,15 +106,7 @@ app.get('/api/animals/:id', (req, res) => {
         res.send(404);
       }
     });
-
-app.get('/api/animals', (req, res) => {
-    let results = animals;
-    if (req.query) {
-        results = filterByQuery(req.query, results);
-        }
-    res.json(results);
-});
-
+    
 //post requests represent the action of a client requesting the server to accept data
 app.post('/api/animals', (req, res) => {
     //set id based on what the next index of the array will be
@@ -105,22 +121,6 @@ app.post('/api/animals', (req, res) => {
     res.json(animal);
     }
 });
-
-function validateAnimal(animal) {
-    if (!animal.name || typeof animal.name !== 'string') {
-      return false;
-    }
-    if (!animal.species || typeof animal.species !== 'string') {
-      return false;
-    }
-    if (!animal.diet || typeof animal.diet !== 'string') {
-      return false;
-    }
-    if (!animal.personalityTraits || !Array.isArray(animal.personalityTraits)) {
-      return false;
-    }
-    return true;
-  }
 
 //method to make the server listen
 app.listen(PORT, () => {
