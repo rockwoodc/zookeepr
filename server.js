@@ -13,6 +13,8 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 // parse incoming JSON data
 app.use(express.json());
+//middleware that instructs the server to make certian files readily available
+app.use(express.static('public'));
 
 
 //This function will take in req.query as an argument and filter through the animals accordingly, returning the new filtered array
@@ -64,7 +66,7 @@ function createNewAnimal(body, animalsArray) {
     const animal = body;
     animalsArray.push(animal);
     fs.writeFileSync(
-        path.join(__dirname, './data/animals.json'),
+        path.join(__dirname, '../data/animals.json'),
         JSON.stringify({ animals: animalsArray }, null, 2)
       );
     
@@ -122,7 +124,27 @@ app.post('/api/animals', (req, res) => {
     }
 });
 
-//method to make the server listen
+//route to sever.js
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, './public/index.html'));
+});
+
+//route to animals
+app.get('/animals', (req, res) => {
+  res.sendFile(path.join(__dirname, './public/animals.html'));
+});
+
+//route to zookeepers
+app.get('/zookeepers', (req, res) => {
+  res.sendFile(path.join(__dirname, './public/zookeepers.html'));
+});
+
+//if user requests a route that doesn't exist they will be redirected to the homepage--THIS KIND OF ROUTE SHOLD ALWAYS BE LAST IN RELATION TO OTHER ROUTES
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, './public/index.html'));
+});
+
+//method to make the server listen-- SHOULD ALWAYS BE LAST
 app.listen(PORT, () => {
     console.log(`API server now on port ${PORT}!`);
 });
